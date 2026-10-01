@@ -1,7 +1,7 @@
 const symbols = ['truck', 'rod', 'dragonfly', 'tackle', 'fish', 'a', 'k', 'q', 'j', 'ten'];
 const paylines = [[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[1,2,3,2,1],[3,2,1,2,3],[2,1,0,1,2],[0,0,1,0,0],[1,1,2,1,1],[2,2,1,2,2],[3,3,2,3,3],[0,1,1,1,0],[1,2,2,2,1],[2,3,3,3,2],[3,2,2,2,3],[0,1,0,1,0],[1,2,1,2,1],[2,3,2,3,2],[3,2,3,2,3]];
 const payouts = { truck: { 3: 10, 4: 40, 5: 400 }, rod: { 3: 6, 4: 30, 5: 200 }, dragonfly: { 3: 4, 4: 20, 5: 100 }, tackle: { 3: 4, 4: 20, 5: 100 }, fish: { 3: 2, 4: 10, 5: 40 }, a: { 3: .4, 4: 5, 5: 20 }, k: { 3: .4, 4: 5, 5: 20 }, q: { 3: .4, 4: 2, 5: 10 }, j: { 3: .4, 4: 2, 5: 10 }, ten: { 3: .4, 4: 2, 5: 10 } };
-const featureOdds = { moneyFish: .05, bigFish: .02, hook: .16, fisherman: .05 };
+const featureOdds = { moneyFish: .05, bigFish: .01, hook: .16, fisherman: .025 };
 const fishPayout = { moneyMin: .2, moneyMax: 5, bigMin: 8, bigMax: 40 };
 const reels = document.querySelector('#reels');
 const spinButton = document.querySelector('#spinButton');
