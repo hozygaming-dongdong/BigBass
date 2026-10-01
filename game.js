@@ -182,5 +182,13 @@ document.querySelector('#soundButton').addEventListener('click', event => {
   event.currentTarget.textContent = soundOn ? '♫' : '🔇';
   if (soundOn) startMusic(pullState ? 'event' : 'base'); else stopMusic();
 });
+let lastTouchEnd = 0;
+document.addEventListener('dblclick', event => event.preventDefault(), { passive: false });
+document.addEventListener('gesturestart', event => event.preventDefault(), { passive: false });
+document.addEventListener('touchend', event => {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) event.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
 document.addEventListener('pointerdown', () => { if (soundOn) startMusic(pullState ? 'event' : 'base'); }, { once: true });
 drawReels();
