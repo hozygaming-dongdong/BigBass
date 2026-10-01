@@ -1,7 +1,7 @@
 const symbols = ['truck', 'rod', 'dragonfly', 'tackle', 'fish', 'a', 'k', 'q', 'j', 'ten'];
 const paylines = [[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[1,2,3,2,1],[3,2,1,2,3],[2,1,0,1,2],[0,0,1,0,0],[1,1,2,1,1],[2,2,1,2,2],[3,3,2,3,3],[0,1,1,1,0],[1,2,2,2,1],[2,3,3,3,2],[3,2,2,2,3],[0,1,0,1,0],[1,2,1,2,1],[2,3,2,3,2],[3,2,3,2,3]];
 const payouts = { truck: { 3: 10, 4: 40, 5: 400 }, rod: { 3: 6, 4: 30, 5: 200 }, dragonfly: { 3: 4, 4: 20, 5: 100 }, tackle: { 3: 4, 4: 20, 5: 100 }, fish: { 3: 2, 4: 10, 5: 40 }, a: { 3: .4, 4: 5, 5: 20 }, k: { 3: .4, 4: 5, 5: 20 }, q: { 3: .4, 4: 2, 5: 10 }, j: { 3: .4, 4: 2, 5: 10 }, ten: { 3: .4, 4: 2, 5: 10 } };
-const featureOdds = { moneyFish: .05, bigFish: .01, hook: .16, fisherman: .025 };
+const featureOdds = { moneyFish: .05, bigFish: .01, goldBigFish: .005, hook: .16, fisherman: .025 };
 const fishPayout = { moneyMin: .2, moneyMax: 5, bigMin: 8, bigMax: 40 };
 const reels = document.querySelector('#reels');
 const spinButton = document.querySelector('#spinButton');
@@ -23,7 +23,7 @@ function soundEffect(name) { const effects = { spin: [[180,.12,'sawtooth',.04,0]
 
 function randomSymbol() { return symbols[Math.floor(Math.random() * symbols.length)]; }
 function symbolMarkup(symbol) { return `<span class="source-symbol symbol-${symbol}" aria-label="${symbol}"></span>`; }
-function bigFishMarkup(key, segments) { return `<span class="big-fish-stack" data-fish-key="${key}" style="--fish-parts:${segments};height:62px"><span class="big-fish-part head"></span><b class="big-fish-tag">???$</b></span>`; }
+function bigFishMarkup(key, segments, gold = false) { return `<span class="big-fish-stack${gold ? ' gold-fish' : ''}" data-fish-key="${key}" style="--fish-parts:${segments};height:62px"><span class="big-fish-part head"></span><b class="big-fish-tag">???$</b></span>`; }
 function expandBigFish(stack, segments) {
   const parts = Array.from({ length: segments - 1 }, (_, index) => `<span class="big-fish-part ${index === segments - 2 ? 'tail' : 'body'} hidden"></span>`).join('');
   stack.querySelector('.big-fish-tag').insertAdjacentHTML('beforebegin', parts);
@@ -31,12 +31,17 @@ function expandBigFish(stack, segments) {
 }
 function createGrid() {
   const grid = Array.from({ length: 5 }, () => Array.from({ length: 4 }, randomSymbol));
-  const moneyValues = {}, bigFishValues = {}, bigFishSizes = {};
+  const moneyValues = {}, bigFishValues = {}, bigFishSizes = {}, goldFishValues = {}, goldFishSizes = {};
   const bonusMarkers = Array.from({ length: 5 }, () => Math.random() < featureOdds.fisherman ? 'fisherman' : Math.random() < featureOdds.hook ? 'hook' : 'empty');
   let bigFishPlaced = false;
   grid.forEach((rows, reelIndex) => rows.forEach((symbol, rowIndex) => {
     const key = `${reelIndex}-${rowIndex}`;
-    if (!bigFishPlaced && Math.random() < featureOdds.bigFish) {
+    if (!bigFishPlaced && Math.random() < featureOdds.goldBigFish) {
+      grid[reelIndex][rowIndex] = 'gold-big-fish';
+      bigFishPlaced = true;
+      goldFishSizes[key] = Math.random() < .5 ? 5 : 9;
+      goldFishValues[key] = bet * (fishPayout.bigMin + Math.floor(Math.random() * (fishPayout.bigMax - fishPayout.bigMin + 1)));
+    } else if (!bigFishPlaced && Math.random() < featureOdds.bigFish) {
       grid[reelIndex][rowIndex] = 'big-fish';
       bigFishPlaced = true;
       bigFishSizes[key] = Math.random() < .5 ? 5 : 9;
@@ -46,16 +51,16 @@ function createGrid() {
       moneyValues[key] = bet * (fishPayout.moneyMin + Math.floor(Math.random() * ((fishPayout.moneyMax - fishPayout.moneyMin) * 10 + 1)) / 10);
     }
   }));
-  return { grid, moneyValues, bigFishValues, bigFishSizes, bonusMarkers };
+  return { grid, moneyValues, bigFishValues, bigFishSizes, goldFishValues, goldFishSizes, bonusMarkers };
 }
-function drawReels({ grid, moneyValues, bigFishSizes, bonusMarkers } = createGrid()) {
-  reels.innerHTML = grid.map((rows, reelIndex) => `<div class="reel"><div class="cell bonus">${symbolMarkup(bonusMarkers[reelIndex])}</div>${rows.map((symbol, rowIndex) => { const key = `${reelIndex}-${rowIndex}`; const content = symbol === 'big-fish' ? bigFishMarkup(key, bigFishSizes[key]) : `${symbolMarkup(symbol)}${symbol === 'money-fish' ? `<b class="money-tag">$${moneyValues[key].toFixed(2)}</b>` : ''}`; return `<div class="cell" data-symbol="${symbol}">${content}</div>`; }).join('')}</div>`).join('');
+function drawReels({ grid, moneyValues, bigFishSizes, goldFishSizes, bonusMarkers } = createGrid()) {
+  reels.innerHTML = grid.map((rows, reelIndex) => `<div class="reel"><div class="cell bonus">${symbolMarkup(bonusMarkers[reelIndex])}</div>${rows.map((symbol, rowIndex) => { const key = `${reelIndex}-${rowIndex}`; const content = symbol === 'big-fish' ? bigFishMarkup(key, bigFishSizes[key]) : symbol === 'gold-big-fish' ? bigFishMarkup(key, goldFishSizes[key], true) : `${symbolMarkup(symbol)}${symbol === 'money-fish' ? `<b class="money-tag">$${moneyValues[key].toFixed(2)}</b>` : ''}`; return `<div class="cell" data-symbol="${symbol}">${content}</div>`; }).join('')}</div>`).join('');
 }
 function evaluateGrid(grid) {
   const wins = [];
   paylines.forEach((line, lineIndex) => {
     const symbol = grid[0][line[0]];
-    if (symbol === 'money-fish' || symbol === 'big-fish') return;
+    if (symbol === 'money-fish' || symbol === 'big-fish' || symbol === 'gold-big-fish') return;
     let count = 1;
     while (count < 5 && grid[count][line[count]] === symbol) count += 1;
     if (count >= 3) wins.push({ lineIndex: lineIndex + 1, line, symbol, count, win: payouts[symbol][count] || 0 });
@@ -142,8 +147,8 @@ function spin() {
     ticks += 1;
     if (ticks < 8) return;
     clearInterval(timer);
-    const { grid, moneyValues, bigFishValues, bigFishSizes, bonusMarkers } = createGrid();
-    drawReels({ grid, moneyValues, bigFishSizes, bonusMarkers });
+    const { grid, moneyValues, bigFishValues, bigFishSizes, goldFishValues, goldFishSizes, bonusMarkers } = createGrid();
+    drawReels({ grid, moneyValues, bigFishSizes, goldFishSizes, bonusMarkers });
     const wins = evaluateGrid(grid);
     const lineWin = bet * wins.reduce((total, result) => total + result.win, 0);
     const catches = [];
@@ -154,6 +159,7 @@ function spin() {
         const key = `${reelIndex}-${rowIndex}`;
         if (symbol === 'money-fish') catches.push({ type: 'money', reelIndex, rowIndex, amount: moneyValues[key] });
         if (symbol === 'big-fish') catches.push({ type: 'big', reelIndex, rowIndex, amount: 0, target: bigFishValues[key], segments: bigFishSizes[key], success: Math.random() < .8 });
+        if (symbol === 'gold-big-fish') catches.push({ type: 'big', gold: true, reelIndex, rowIndex, amount: 0, target: goldFishValues[key], segments: goldFishSizes[key], success: Math.random() < .8 });
       });
     });
     if (lineWin) wins.forEach(result => result.line.slice(0, result.count).forEach((row, reelIndex) => reels.children[reelIndex].children[row + 1].classList.add('win')));
